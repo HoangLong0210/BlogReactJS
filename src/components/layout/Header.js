@@ -39,17 +39,17 @@ const HeaderStyles = styled.header`
     align-items: center;
     position: relative;
     margin-right: 20px;
-  }
-  &-input {
-    flex: 1;
-    padding-right: 45px;
-    font-weight: 500px;
-  }
-  &-icon {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    right: 25px;
+    &-input {
+      flex: 1;
+      padding-right: 45px;
+      font-weight: 500px;
+    }
+    &-icon {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      right: 25px;
+    }
   }
   @media screen and (max-width: 1023.98px) {
     .logo {
@@ -91,7 +91,9 @@ const Header = () => {
           <ul className="menu">
             {menuLinks.map((item) => (
               <li className="menu-item" key={item.title}>
-                <NavLink to={item.url}>{item.title}</NavLink>
+                <NavLink to={item.url} className="menu-link">
+                  {item.title}
+                </NavLink>
               </li>
             ))}
           </ul>
@@ -102,7 +104,7 @@ const Header = () => {
               className="search-input"
               placeholder="Search posts..."
             />
-            <span className="icon">
+            <span className="search-icon">
               <svg
                 width="18"
                 height="17"
@@ -138,13 +140,13 @@ const Header = () => {
               height="56px"
               className="header-button"
               type="button"
-              to="/sign-up"
+              to="/sign-in"
             >
-              Sign Up
+              Login
             </Button>
           ) : (
             <div className="header-auth">
-              <span>Welcome back,</span>
+              <span>Welcome back, </span>
               <strong className="text-primary">
                 {getLastname(userInfo?.displayName)}
               </strong>
