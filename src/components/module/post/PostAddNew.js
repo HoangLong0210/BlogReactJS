@@ -1,5 +1,4 @@
 import { Button } from "components/button";
-
 import { Field } from "components/field";
 import { Input } from "components/input";
 import { Label } from "components/label";
@@ -8,19 +7,28 @@ import { useForm } from "react-hook-form";
 import slugify from "slugify";
 import styled from "styled-components";
 import { postStatus } from "utils/constants";
-
 import ImageUpload from "components/image/ImageUpload";
-import { addDoc, collection, getDocs, query, where } from "firebase/firestore";
+import {
+  addDoc,
+  collection,
+  getDocs,
+  query,
+  serverTimestamp,
+  where,
+} from "firebase/firestore";
 import { db } from "firebase-app/firebase-config";
 import { Radio } from "components/checkbox";
 import useHandleImage from "hook/useHandleImage";
 import Toggle from "components/toggle/Toggle";
 import { Dropdown } from "components/dropdown";
+import { useAuth } from "contexts/auth-context";
+import { toast } from "react-toastify";
 
 const PostAddNewStyles = styled.div``;
 
 const PostAddNew = () => {
-  const { control, watch, setValue, handleSubmit, getValues } = useForm({
+  const { userInfo } = useAuth();
+  const { control, watch, setValue, handleSubmit, getValues, reset } = useForm({
     mode: "onChange",
     defaultValues: {
       title: "",
@@ -28,23 +36,60 @@ const PostAddNew = () => {
       status: 2,
       categoryId: "",
       hot: false,
+      image: "",
     },
   });
 
   const [categories, setCategories] = useState([]);
+  const [category, setCategory] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const watchStatus = watch("status");
   const watchHot = watch("hot");
   // const watchCategory = watch("category");
 
   const addPostHandler = async (values) => {
-    const copyValues = { ...values };
-    copyValues.slug = slugify(values.title || values.slug);
-    copyValues.status = Number(values.status);
+    setLoading(true);
+    console.log(
+      "🚀 ~ file: PostAddNew.js:42 ~ addPostHandler ~ values:",
+      values
+    );
+    try {
+      const copyValues = { ...values };
+      copyValues.slug = slugify(values.title || values.slug, { lower: true });
+      copyValues.status = Number(values.status);
+      const colRef = collection(db, "posts");
+      await addDoc(colRef, {
+        ...copyValues,
+        image,
+        userId: userInfo.uid,
+        createAt: serverTimestamp(),
+      });
+      toast.success("Create new post successfully!!!");
+      reset({
+        title: "",
+        slug: "",
+        status: 2,
+        categoryId: "",
+        hot: false,
+        image: "",
+      });
+      handleResetUpload();
+      setCategory({});
+    } catch (error) {
+      setLoading(false);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const { image, progress, handleSelectImage, handleDeleteImage } =
-    useHandleImage(setValue, getValues);
+  const {
+    image,
+    progress,
+    handleResetUpload,
+    handleSelectImage,
+    handleDeleteImage,
+  } = useHandleImage(setValue, getValues);
 
   useEffect(() => {
     async function getData() {
@@ -58,6 +103,15 @@ const PostAddNew = () => {
       setCategories(results);
     }
     getData();
+  }, []);
+
+  const handleClickOption = (item) => {
+    setValue("categoryId", item.id);
+    setCategory(item);
+  };
+
+  useEffect(() => {
+    document.title = "MONKEY BLOGGING - ADD NEW POST";
   }, []);
 
   return (
@@ -104,15 +158,18 @@ const PostAddNew = () => {
                   categories.map((item) => (
                     <Dropdown.Option
                       key={item.id}
-                      onClick={() => {
-                        setValue("categoryId", item.id);
-                      }}
+                      onClick={() => handleClickOption(item)}
                     >
                       {item.name}
                     </Dropdown.Option>
                   ))}
               </Dropdown.List>
             </Dropdown>
+            {category?.name && (
+              <span className="inline-block p-3 rounded-lg bg-green-100 text-green-600 text-sm font-medium">
+                {category?.name}
+              </span>
+            )}
           </Field>
         </div>
 
@@ -154,7 +211,12 @@ const PostAddNew = () => {
             </div>
           </Field>
         </div>
-        <Button type="submit" className="mx-auto">
+        <Button
+          type="submit"
+          className="mx-auto w-[200px]"
+          isLoading={loading}
+          disable={loading}
+        >
           Add new post
         </Button>
       </form>

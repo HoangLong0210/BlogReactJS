@@ -68,5 +68,15 @@ export default function useHandleImage(setValue, getValues) {
         console.log("Can not delete image");
       });
   };
-  return { image, progress, handleSelectImage, handleDeleteImage };
+  const handleResetUpload = () => {
+    setImage("");
+    setProgress(0);
+  };
+  return {
+    image,
+    progress,
+    handleResetUpload,
+    handleSelectImage,
+    handleDeleteImage,
+  };
 }
